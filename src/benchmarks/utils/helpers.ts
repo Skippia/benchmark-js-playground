@@ -1,7 +1,12 @@
-import { convertCLICoresOptionToRealCores } from '@shared/helpers'
-import type { second, TDefaultSettings, TRuntimeSettings } from '@shared/types'
+import type { ChildProcessWithoutNullStreams } from 'node:child_process'
+import process from 'node:process'
 
-import type { TAutomateConfig } from './types'
+import { convertCLICoresOptionToRealCores, getFlagValue } from '@shared/helpers'
+import type { second, TRuntimeSettings } from '@shared/types'
+
+import type { ServerProcessManager } from '../server-process-manager'
+
+import type { TAutomateConfig, TDefaultSettings } from './types'
 
 const sleep = (ms: second) => new Promise<void>((resolve) => {
   setTimeout(resolve, ms * 1000)
@@ -28,8 +33,37 @@ const buildOperations = ({
   ),
 )
 
+/**
+ * @description GS for parent process
+ */
+const configureCascadeMasterGracefulShutdown = (childProcessManagerRef: { value: ServerProcessManager | null }) => {
+  const signals = ['SIGINT', 'SIGTERM'] as const
+
+  signals.forEach((signal) => {
+    process.on(signal, () => {
+      const exitCode = signal === 'SIGTERM' ? 1 : 0
+
+      if (childProcessManagerRef.value?.isRunning) {
+        (childProcessManagerRef.value.childProcess as ChildProcessWithoutNullStreams).on('close', () => {
+          process.exit(exitCode)
+        })
+
+        childProcessManagerRef.value.stop(signal)
+      }
+      else {
+        console.log('No child process running. Exiting parent process.')
+        process.exit(exitCode)
+      }
+    })
+  })
+}
+
+const checkIsManualMode = () => getFlagValue('automate') === 'manual-mode'
+
 export {
   buildOperations,
+  checkIsManualMode,
+  configureCascadeMasterGracefulShutdown,
   logAfterBenchmark,
   logBeforeBenchmark,
   logCompleteBenchmark,

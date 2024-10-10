@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process'
 import cluster from 'node:cluster'
 import process from 'node:process'
 
-import { convertCLICoresOptionToRealCores } from '@shared/helpers'
 import type { THostEnvironment, TTransportTypeUnion, TUsecaseTypeUnion } from '@shared/types'
 
 /**
@@ -46,8 +45,4 @@ export const runServerInChildProcess = (
   console.log('Spawn new child process:', childProcess.pid)
 
   return childProcess
-}
-
-export {
-  convertCLICoresOptionToRealCores,
 }

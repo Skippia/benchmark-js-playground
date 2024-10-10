@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import type { TDefaultSettings } from '@shared/types'
-
-import type { TFileInput, TResultBenchmark, TSnapshotOnDisk } from './types'
+import type { TDefaultSettings, TFileInput, TResultBenchmark, TSnapshotOnDisk } from './types'
 
 const checkIsFileExists = async (pathLike: string): Promise<boolean> => {
   try {

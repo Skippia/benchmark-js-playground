@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import process from 'node:process'
 
-import type { THostEnvironment, TTransportTypeUnion, TUsecaseTypeUnion } from './types'
+import type { THostEnvironment, TTransportTypeUnion, TUsecaseTypeUnion } from '@shared/types'
 
 class ServerProcessManager {
   childProcess: ChildProcessWithoutNullStreams | null = null

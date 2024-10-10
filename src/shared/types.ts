@@ -11,20 +11,11 @@ type TRuntimeSettings = {
   cores: number
 }
 
-type TDefaultSettings = {
-  delayBeforeRunning: second
-  connections: number
-  pipelining: number
-  workers: number
-  duration: second
-}
-
 type THostEnvironment = 'bun' | 'node'
 
 export type {
   second,
   TAllowedFlags,
-  TDefaultSettings,
   THostEnvironment,
   TRuntimeSettings,
   TTransportTypeUnion,

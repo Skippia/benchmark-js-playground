@@ -51,9 +51,60 @@ const USECASE_MAP: { [K in TUsecaseTypeUnion]: TUsecaseConfig<K> } = {
   },
 } as const
 
-const ALLOWED_FLAGS = ['u', 't', 'c', 'p', 'w', 'd', 'automate', 'cores'] as const
+const NOT_REQUIRED_FLAGS = ['c', 'd', 'w', 'p', 'cores', 'automate'] as const
+const REQUIRED_FLAGS = ['u', 't'] as const
+
+const ALLOWED_FLAGS = [...NOT_REQUIRED_FLAGS, ...REQUIRED_FLAGS] as const
 
 type TAllowedFlags = typeof ALLOWED_FLAGS[number]
 
-export { ALLOWED_FLAGS, TRANSPORTS, USECASE_MAP, USECASES }
-export type { TAllowedFlags, TTransportTypeUnion, TUsecaseConfig, TUsecaseTypeUnion }
+type EnsureKeysAreAllowed<T, AllowedKeys extends PropertyKey> =
+  Exclude<keyof T, AllowedKeys> extends never
+    ? T
+    : { ERROR: 'Invalid keys detected', INVALID_KEYS: Exclude<keyof T, AllowedKeys> }
+
+type TFlagMap = EnsureKeysAreAllowed<
+  {
+    cores: number | 'max' | undefined
+    automate: 'automate-mode' | 'manual-mode'
+    t: TTransportTypeUnion
+    u: TUsecaseTypeUnion
+    d: number | undefined
+    p: number | undefined
+    c: number | undefined
+    w: number | undefined
+  },
+  TAllowedFlags
+>
+
+type TFlagMapInverted =
+  {
+    cores: number | 'max' | undefined
+    automate: 'automate-mode' | 'manual-mode'
+    transport: TTransportTypeUnion
+    usecase: TUsecaseTypeUnion
+    duration: number | undefined
+    pipeline: number | undefined
+    connection: number | undefined
+    workers: number | undefined
+  }
+
+const FLAG_MAP = {
+  cores: 'cores',
+  automate: 'automate',
+  d: 'duration',
+  p: 'pipeline',
+  c: 'connection',
+  t: 'transport',
+  u: 'usecase',
+  w: 'workers',
+} as const satisfies Record<TAllowedFlags, string>
+
+type Invert<T extends Record<string, string>> = {
+  [key in T[keyof T]]: {
+    [keyInner in keyof T]: T[keyInner] extends key ? keyInner : never
+  }[keyof T]
+}
+
+export { ALLOWED_FLAGS, FLAG_MAP, NOT_REQUIRED_FLAGS, REQUIRED_FLAGS, TRANSPORTS, USECASE_MAP, USECASES }
+export type { Invert, TAllowedFlags, TFlagMap, TFlagMapInverted, TTransportTypeUnion, TUsecaseConfig, TUsecaseTypeUnion }

@@ -1,4 +1,4 @@
-import type { TTransportTypeUnion } from '../../shared/types'
+import type { TTransportTypeUnion } from '@shared/types'
 
 type TContext<T extends Record<string, unknown> = {}> = Record<string, unknown> & T
 

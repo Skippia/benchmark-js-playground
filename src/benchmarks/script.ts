@@ -1,11 +1,11 @@
 import { USECASE_MAP } from '@shared/constants'
-import { startEntrypoint } from '@shared/entrypoint'
-import type { TDefaultSettings, TRuntimeSettings } from '@shared/types'
-
-import type { ServerProcessManager } from '../shared/server-process-manager'
+import type { TRuntimeSettings } from '@shared/types'
 
 import { startBenchmark } from './benchmark'
+import { startEntrypoint } from './entrypoint'
+import type { ServerProcessManager } from './server-process-manager'
 import { updateBenchmarkInfo } from './utils/file'
+import type { TDefaultSettings } from './utils/types'
 
 export const runScript = async (
   defaultSettings: TDefaultSettings,

@@ -1,12 +1,11 @@
-import { configureCascadeMasterGracefulShutdown } from '@shared/helpers'
-import type { TDefaultSettings, TRuntimeSettings } from '@shared/types'
-
-import type { ServerProcessManager } from '../shared/server-process-manager'
+import type { TRuntimeSettings } from '@shared/types'
 
 import { automateBenchmarkConfig } from './benchmark-config'
 import { runScript } from './script'
+import type { ServerProcessManager } from './server-process-manager'
 import { prepareToBenchmarkFileOnDisk } from './utils/file'
-import { buildOperations, logAfterBenchmark, logBeforeBenchmark, logCompleteBenchmark, sleep } from './utils/helpers'
+import { buildOperations, configureCascadeMasterGracefulShutdown, logAfterBenchmark, logBeforeBenchmark, logCompleteBenchmark, sleep } from './utils/helpers'
+import type { TDefaultSettings } from './utils/types'
 
 const start = async ({ defaultSettings, operations }: { defaultSettings: TDefaultSettings, operations: TRuntimeSettings[] }) => {
   /**

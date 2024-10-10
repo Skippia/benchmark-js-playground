@@ -6,9 +6,10 @@ import autocannon from 'autocannon'
 
 import { USECASE_MAP } from '@shared/constants'
 import { getFlagValue } from '@shared/helpers'
-import type { TUsecaseConfig, TUsecaseTypeUnion } from '@shared/types'
+import type { TUsecaseConfig } from '@shared/types'
 
 import { defaultBenchmarkConfig } from './benchmark-config'
+import { checkIsManualMode } from './utils/helpers'
 import type { TBenchmarkSettingsCLI, TBenchmarkSettingsProgrammatically, TResultBenchmark } from './utils/types'
 
 const require = createRequire(import.meta.url)
@@ -90,10 +91,10 @@ function startBenchmark(
 }
 
 // ? Run in manual mode (run from CLI is forbidden in automate mode)
-const isAutomateMode = getFlagValue('automate')
+const isManualMode = checkIsManualMode()
 
-if (!isAutomateMode) {
-  const usecase = getFlagValue('u') as TUsecaseTypeUnion
+if (isManualMode) {
+  const usecase = getFlagValue('u')
   const usecaseConfig = usecase in USECASE_MAP ? USECASE_MAP[usecase] : null
 
   if (!usecaseConfig) throw new Error('Usecase not found!')

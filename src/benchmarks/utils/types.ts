@@ -1,4 +1,4 @@
-import type { TDefaultSettings, TTransportTypeUnion, TUsecaseConfig, TUsecaseTypeUnion } from '@shared/types'
+import type { second, TTransportTypeUnion, TUsecaseConfig, TUsecaseTypeUnion } from '@shared/types'
 
 type TBenchmarkSettingsCLI = Omit<TDefaultSettings, 'cores' | 'delayBeforeRunning'>
   & { usecaseConfig: TUsecaseConfig } & Partial<Pick<TResultBenchmark, 'transport' | 'usecase'>>
@@ -45,12 +45,21 @@ type TSnapshotOnDisk = {
   benchmarks: TResultBenchmark[]
 }
 
+type TDefaultSettings = {
+  delayBeforeRunning: second
+  connections: number
+  pipelining: number
+  workers: number
+  duration: second
+}
+
 type TFileInput = { pathToStorage: string, fileContent: Partial<TSnapshotOnDisk> }
 
 export type {
   TAutomateConfig,
   TBenchmarkSettingsCLI,
   TBenchmarkSettingsProgrammatically,
+  TDefaultSettings,
   TFileInput,
   TResultBenchmark,
   TSnapshotOnDisk,

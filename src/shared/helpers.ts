@@ -1,39 +1,17 @@
-import type { ChildProcessWithoutNullStreams } from 'node:child_process'
+/* eslint-disable antfu/curly */
+
 import { cpus } from 'node:os'
 import process from 'node:process'
 
-import { ALLOWED_FLAGS, TRANSPORTS, USECASES } from './constants'
-import type { ServerProcessManager } from './server-process-manager'
+import { ALLOWED_FLAGS, FLAG_MAP, NOT_REQUIRED_FLAGS, TRANSPORTS, USECASES } from './constants'
+import type { Invert, TFlagMap } from './constants'
 import type { TAllowedFlags, TRuntimeSettings, TTransportTypeUnion, TUsecaseTypeUnion } from './types'
 
 const isPositiveNumeric = (value: string | undefined | null) => (value !== null && typeof value !== 'undefined') ? /^\d+$/.test(value) : false
 const isTransport = (val: unknown): val is TTransportTypeUnion => TRANSPORTS.includes(val as TTransportTypeUnion)
 const isUsecase = (val: unknown): val is TUsecaseTypeUnion => USECASES.includes(val as TUsecaseTypeUnion)
-
-/**
- * @description GS for parent process
- */
-const configureCascadeMasterGracefulShutdown = (childProcessManagerRef: { value: ServerProcessManager | null }) => {
-  const signals = ['SIGINT', 'SIGTERM'] as const
-
-  signals.forEach((signal) => {
-    process.on(signal, () => {
-      const exitCode = signal === 'SIGTERM' ? 1 : 0
-
-      if (childProcessManagerRef.value?.isRunning) {
-        (childProcessManagerRef.value.childProcess as ChildProcessWithoutNullStreams).on('close', () => {
-          process.exit(exitCode)
-        })
-
-        childProcessManagerRef.value.stop(signal)
-      }
-      else {
-        console.log('No child process running. Exiting parent process.')
-        process.exit(exitCode)
-      }
-    })
-  })
-}
+const isNotRequiredFlag = (val: unknown): val is typeof NOT_REQUIRED_FLAGS[number] => NOT_REQUIRED_FLAGS.includes(val as typeof NOT_REQUIRED_FLAGS[number])
+const isAllowFlag = (val: unknown): val is TAllowedFlags => ALLOWED_FLAGS.includes(val as TAllowedFlags)
 
 const convertCLICoresOptionToRealCores = (cores: number | 'max' | undefined): number =>
   cores === 'max'
@@ -42,37 +20,62 @@ const convertCLICoresOptionToRealCores = (cores: number | 'max' | undefined): nu
       ? 1
       : Number(cores)
 
-const getFlagValue = (flag: TAllowedFlags): TTransportTypeUnion | TUsecaseTypeUnion | 'max' | 'automate-mode' | 'manual-mode' | number | undefined => {
-  const options = process.argv.slice(2)
+function getFlagValue<T extends keyof TFlagMap>(flag: T, argv?: string[]): TFlagMap[T] {
+  const options = argv || process.argv.slice(2)
   const index = options.indexOf(`-${flag}`)
+  const isFound = index !== -1
 
-  if (!ALLOWED_FLAGS.includes(flag) || (index === -1 && !(['automate', 'cores'].includes(flag)))) throw new Error(`Unknown flag ${flag} was detected!`)
+  if (!isAllowFlag(flag)) throw new Error(`Unknown flag ${flag as string} was detected!`)
+  if (!isFound && !isNotRequiredFlag(flag)) throw new Error(`Flag ${flag} should have value!`)
 
   const foundVal = index !== -1 ? options[index + 1] : undefined
 
-  // console.dir({ options, index, foundVal })
+  if (flag === 'cores') return (foundVal === 'max'
+    ? 'max'
+    : isPositiveNumeric(foundVal)
+      ? Number(foundVal)
+      : undefined) as TFlagMap[T]
+  if (flag === 'automate') return (isFound ? 'automate-mode' : 'manual-mode') as TFlagMap[T]
 
-  if (flag === 'automate') return index !== -1 ? 'automate-mode' : 'manual-mode'
-  if (flag === 'cores' && foundVal !== 'max' && !isPositiveNumeric(foundVal)) return undefined // will be set default value
-  if (['c', 'd', 'w', 'p'].includes(flag) && !isPositiveNumeric(foundVal)) return undefined // will be set default values
-  if (flag === 't' && !isTransport(foundVal)) throw new Error(`Invalid transport: ${foundVal}`)
-  if (flag === 'u' && !isUsecase(foundVal)) throw new Error(`Invalid usecase: ${foundVal}`)
+  if (flag === 't') {
+    if (!isTransport(foundVal)) throw new Error(`Invalid transport: ${foundVal}`)
+    return foundVal as TFlagMap[T]
+  }
 
-  return isPositiveNumeric(foundVal) ? Number(foundVal) : foundVal as TTransportTypeUnion | TUsecaseTypeUnion | 'max'
+  if (flag === 'u') {
+    if (!isUsecase(foundVal)) throw new Error(`Invalid usecase: ${foundVal}`)
+    return foundVal as TFlagMap[T]
+  }
+
+  return (isPositiveNumeric(foundVal) ? Number(foundVal) : undefined) as TFlagMap[T]
+}
+
+export const keysTransformer = <T extends Record<string, unknown>, X extends { [key in keyof T]: string }>(objSource: T, mapKeys: X) =>
+  Object.entries(objSource).reduce((acc, cur) => {
+    const [key, value] = cur as [keyof T, T[keyof T]]
+    const newKey = mapKeys[key]
+    return { ...acc, [newKey]: value }
+    // @ts-expect-error bug TS?...
+  }, {} as { [key in X[keyof T]]: T[Invert<X>[key]] })
+
+const getFlagValues = <T extends keyof TFlagMap>(flags: T[]) => {
+  const options = process.argv.slice(2)
+
+  const res = flags.reduce((acc, flag) =>
+    ({ ...acc, [flag]: getFlagValue(flag, options) }), {} as { [key in T]: TFlagMap[key] })
+
+  return keysTransformer(res, FLAG_MAP)
 }
 
 const getRuntimeSettings = (): TRuntimeSettings => ({
-  transport: getFlagValue('t') as TTransportTypeUnion,
-  usecase: getFlagValue('u') as TUsecaseTypeUnion,
-  cores: convertCLICoresOptionToRealCores(getFlagValue('cores') as number | 'max' | undefined),
+  transport: getFlagValue('t'),
+  usecase: getFlagValue('u'),
+  cores: convertCLICoresOptionToRealCores(getFlagValue('cores')),
 })
 
-const checkIsManualMode = () => getFlagValue('automate') === 'manual-mode'
-
 export {
-  checkIsManualMode,
-  configureCascadeMasterGracefulShutdown,
   convertCLICoresOptionToRealCores,
   getFlagValue,
+  getFlagValues,
   getRuntimeSettings,
 }

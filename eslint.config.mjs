@@ -111,7 +111,7 @@ export default antfu(
       'ts/prefer-optional-chain': 'error',
       'ts/prefer-readonly': 'off',
       'ts/prefer-readonly-parameter-types': 'off',
-      'ts/prefer-reduce-type-parameter': 'error',
+      'ts/prefer-reduce-type-parameter': 'off',
       'ts/prefer-regexp-exec': 'off',
       'ts/prefer-return-this-type': 'error',
       'ts/prefer-string-starts-ends-with': 'error',
